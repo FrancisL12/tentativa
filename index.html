@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragance Play por Lord Aroma</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #E0E0E0;
+        }
+        .gold-text { color: #D4AF37; }
+        .gold-border { border-color: #D4AF37; }
+        
+        /* Estilo de botões refinado */
+        .btn-base {
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #D4AF37;
+            text-align: center;
+            -webkit-tap-highlight-color: transparent; /* Remove o destaque azul no toque em mobile */
+        }
+
+        .btn-primary {
+            background-color: #D4AF37;
+            color: #121212;
+        }
+        .btn-primary:hover {
+            background-color: #121212;
+            color: #D4AF37;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: #D4AF37;
+        }
+        .btn-secondary.active,
+        .btn-secondary:hover {
+            background-color: #D4AF37;
+            color: #121212;
+        }
+
+        .hidden { display: none; }
+        .screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            position: relative; /* Para posicionar a barra de progresso */
+        }
+
+        /* Barra de progresso otimizada para mobile */
+        .progress-bar-container {
+            position: absolute;
+            top: 25px;
+            left: 5%;
+            right: 5%;
+            width: 90%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 12px; /* Mais visível */
+            background-color: #333;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #D4AF37;
+            transition: width 0.5s ease;
+            border-radius: 6px;
+        }
+        
+        .pulsate {
+            animation: pulsate 1.5s infinite;
+        }
+        @keyframes pulsate {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 10px 10px rgba(212, 175, 55, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+        }
+        
+        /* Modal do Cropper */
+        .modal-cropper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-cropper-content {
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 90vw;
+            max-height: 80vh;
+        }
+        #image-to-crop {
+            max-width: 100%;
+            max-height: 60vh;
+        }
+
+        /* Efeito de hover nos cards do quiz */
+        .quiz-card {
+            border: 2px solid transparent;
+            transition: border-color 0.3s ease, transform 0.3s ease;
+        }
+        .quiz-card:hover {
+            transform: scale(1.03);
+            border-color: #D4AF37;
+        }
+    </style>
+</head>
+<body class="bg-[#121212]">
+
+    <!-- Tela 1: Inicial -->
+    <div id="tela-inicial" class="screen flex flex-col justify-center items-center text-center p-5">
+        <h1 class="text-4xl md:text-5xl font-bold gold-text tracking-wider">FragancePlay</h1>
+        <p class="text-md text-gray-300 mb-10">por Lord Aroma</p>
+        <h2 class="text-3xl md:text-4xl font-semibold mb-3 leading-tight">Descubra Sua Assinatura<br>Olfativa</h2>
+        <p class="text-gray-400 max-w-xs mb-10">Responda 5 perguntas e revelaremos seu perfil de perfume ideal.</p>
+        <button id="btn-comecar" class="btn-base btn-primary w-full max-w-xs">VAMOS LÁ</button>
+    </div>
+
+    <!-- Tela 2: Identificação -->
+    <div id="tela-identificacao" class="screen hidden">
+        <h2 class="text-2xl font-bold gold-text mb-6">Quem é você?</h2>
+        <div class="w-full max-w-sm">
+            <input type="text" id="input-nome" placeholder="Digite seu nome" class="w-full p-3 mb-4 bg-[#333] border-2 border-transparent focus:border-gold-border rounded-lg outline-none transition">
+            
+            <label for="input-foto" class="btn-base btn-secondary w-full mb-4 block">Enviar Foto (Opcional)</label>
+            <input type="file" id="input-foto" class="hidden" accept="image/*">
+            <img id="preview-foto" src="https://placehold.co/150x150/121212/D4AF37?text=Perfil" class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 gold-border">
+
+            <h3 class="gold-text mt-4 mb-2">Universo:</h3>
+            <div id="opcoes-universo" class="flex justify-center gap-2 mb-4">
+                <button class="btn-base btn-secondary flex-1" data-universo="Masculino">Masculino</button>
+                <button class="btn-base btn-secondary flex-1" data-universo="Feminino">Feminino</button>
+                <button class="btn-base btn-secondary flex-1" data-universo="Versatil">Versátil</button>
+            </div>
+
+            <h3 class="gold-text mt-4 mb-2">Origem do Perfume:</h3>
+            <div id="opcoes-origem" class="flex justify-center gap-2 mb-4">
+                <button class="btn-base btn-secondary flex-1" data-origem="Importados">Importados</button>
+                <button class="btn-base btn-secondary flex-1" data-origem="Nacionais">Nacionais</button>
+                <button class="btn-base btn-secondary flex-1" data-origem="Ambos">Ambos</button>
+            </div>
+            
+            <button id="btn-iniciar-quiz" class="btn-base btn-primary w-full mt-4">Iniciar Quiz</button>
+        </div>
+    </div>
+    
+    <!-- Modal do Cropper -->
+    <div id="modal-cropper" class="modal-cropper hidden">
+        <div class="modal-cropper-content">
+            <h3 class="text-xl gold-text mb-4">Ajuste sua foto</h3>
+            <div>
+                <img id="image-to-crop">
+            </div>
+            <div class="flex justify-center gap-4 mt-4">
+                <button id="btn-cortar" class="btn-base btn-primary">Cortar</button>
+                <button id="btn-cancelar-corte" class="btn-base btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Tela 3: Quiz -->
+    <div id="tela-quiz" class="screen hidden justify-center pt-20">
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div class="w-full max-w-2xl">
+            <h2 id="pergunta-titulo" class="text-2xl font-bold mb-8">Pergunta...</h2>
+            <div id="opcoes-resposta" class="grid grid-cols-2 gap-4">
+                <!-- Opções de resposta em formato de card serão inseridas aqui via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela 4: Análise -->
+    <div id="tela-analise" class="screen hidden">
+        <h2 class="text-3xl font-bold gold-text mb-4">Analisando suas respostas...</h2>
+        <div class="w-16 h-16 border-4 border-dashed rounded-full animate-spin gold-border"></div>
+        <p class="mt-4 text-gray-400">Encontrando seu arquétipo olfativo.</p>
+    </div>
+
+    <!-- Tela 5: Resultados -->
+    <div id="tela-resultados" class="screen hidden">
+        <div id="area-resultado" class="bg-[#222] p-6 rounded-lg shadow-lg w-full max-w-md text-center">
+            <img id="resultado-foto" src="" class="w-32 h-32 rounded-full mx-auto mb-4 object-cover border-4 gold-border">
+            <h2 id="resultado-nome" class="text-2xl font-bold">Nome do Usuário</h2>
+            <p class="text-lg gold-text mb-2">Seu perfil olfativo é:</p>
+            
+            <h3 id="resultado-arquetipo" class="text-3xl font-bold gold-text mb-8">Nome do Arquétipo</h3>
+
+            <div class="text-left">
+                <p class="gold-text font-semibold mb-2">Perfumes recomendados para você:</p>
+                <div id="lista-perfumes" class="space-y-3 mb-6">
+                    <!-- Recomendações de perfumes aqui via JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 mt-6 w-full max-w-md">
+            <button id="btn-compartilhar" class="btn-base btn-primary flex-1">Compartilhar Resultado</button>
+            <button id="btn-whatsapp" class="btn-base btn-primary pulsate flex-1">
+                Compre no Grupo VIP!
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- 1. CONFIGURAÇÕES E DADOS GLOBAIS ---
+
+        const linkWhatsapp = "https://chat.whatsapp.com/LjwtU5fO5d8Aec1F9Gjc2W"; 
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTVo5-wbqe0_hjaervqTvaYNnKJ4J4C9IRMGOt-kn8ST6XO41Sn7_hd181oL1vvIbQHJU88FEVnxHD_/pub?output=csv';
+
+        // Dados do Quiz: Perguntas, respostas e tags associadas.
+        const quizData = [
+            {
+                pergunta: "Qual destes cenários mais te atrai para um momento de tranquilidade?",
+                respostas: [
+                    { descricao: "Biblioteca Clássica", img: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=870", tags: { Amadeirado: 2, Couro: 1, Especiado: 1, Clássico: 1 } },
+                    { descricao: "Varanda com Vista para o Mar", img: "https://images.unsplash.com/photo-1587502536783-c05298242f32?q=80&w=870", tags: { Cítrico: 2, Aquático: 2, Frutado: 1, Diurno: 1 } },
+                    { descricao: "Confeitaria Charmosa", img: "https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=774", tags: { Gourmand: 2, Baunilha: 1, Atalcado: 1, Sedutor: 1 } },
+                    { descricao: "Jardim Secreto", img: "https://images.unsplash.com/photo-1592911599833-c20a45b1e6a1?q=80&w=774", tags: { Floral: 2, Verde: 2, Aromático: 1, Natural: 1 } }
+                ]
+            },
+            {
+                pergunta: "Qual tecido representa melhor seu estilo pessoal?",
+                respostas: [
+                    { descricao: "Linho Leve", img: "https://images.unsplash.com/photo-1620799140408-edc6d5f94206?q=80&w=774", tags: { Fresco: 2, Almiscarado: 1, Diurno: 1, Minimalista: 1 } },
+                    { descricao: "Veludo Luxuoso", img: "https://images.unsplash.com/photo-1616817644793-9b8882199493c?q=80&w=774", tags: { Oriental: 2, Atalcado: 1, Noturno: 1, Sofisticado: 1 } },
+                    { descricao: "Couro Atemporal", img: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=775", tags: { Couro: 2, Especiado: 1, Rebelde: 1, Intenso: 1 } },
+                    { descricao: "Cashmere Confortável", img: "https://images.unsplash.com/photo-1595534061182-34945115a18a?q=80&w=774", tags: { Amadeirado: 2, Almiscarado: 1, Confortável: 1, Elegante: 1 } }
+                ]
+            },
+            {
+                pergunta: "Para uma noite especial, você escolheria...",
+                respostas: [
+                    { descricao: "Bar de Jazz", img: "https://images.unsplash.com/photo-1598653229828-54948a07f76d?q=80&w=870", tags: { Sofisticado: 2, Incensado: 1, Noturno: 1, Misterioso: 1 } },
+                    { descricao: "Festa em um Rooftop", img: "https://images.unsplash.com/photo-1579564115814-245f4293f356?q=80&w=774", tags: { Especiado: 2, Doce: 1, Intenso: 1, Moderno: 1 } },
+                    { descricao: "Jantar Íntimo em Casa", img: "https://images.unsplash.com/photo-1525824222300-4f5b39178659?q=80&w=774", tags: { Confortável: 1, Gourmand: 1, Aromático: 1, Natural: 1 } },
+                    { descricao: "Vernissage de Arte", img: "https://images.unsplash.com/photo-1549488344-cbb6c1441203?q=80&w=870", tags: { Chipre: 2, Mineral: 1, Moderno: 1, Criativo: 1 } }
+                ]
+            },
+            {
+                pergunta: "O que mais te inspira?",
+                respostas: [
+                    { descricao: "Explorar um Mapa", img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=870", tags: { Aventureiro: 2, Amadeirado: 1, Cítrico: 1, Clássico: 1 } },
+                    { descricao: "Arquitetura Moderna", img: "https://images.unsplash.com/photo-1487958449943-2429e8be8625?q=80&w=870", tags: { Moderno: 2, Metálico: 1, Chipre: 1, Visionário: 1 } },
+                    { descricao: "A Energia de um Palco", img: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?q=80&w=870", tags: { Sedutor: 2, Intenso: 1, Oriental: 1, Magnético: 1 } },
+                    { descricao: "O Silêncio dos Livros", img: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?q=80&w=870", tags: { Elegante: 2, Atalcado: 1, Herbal: 1, Clássico: 1 } }
+                ]
+            },
+            {
+                pergunta: "Qual impressão você deseja deixar?",
+                respostas: [
+                    { descricao: "Elegância", tags: { Sofisticado: 2, Atalcado: 1 }, tagsCondicionais: { Masculino: { Amadeirado: 2 }, Feminino: { Floral: 2 }, Versatil: { Chipre: 2 } } },
+                    { descricao: "Energia", tags: { Cítrico: 2, Frutado: 2, Especiado: 1 } },
+                    { descricao: "Mistério", tags: { Oriental: 2, Incensado: 2, Couro: 1 } },
+                    { descricao: "Autenticidade", tags: { Natural: 2, Verde: 2, Almiscarado: 1 } }
+                ]
+            },
+        ];
+
+        // Arquétipos e seus acordes principais, separados por universo.
+        const arquetipos = {
+            Masculino: [ { nome: "O Executivo Magnético", acordes: ["Amadeirado", "Especiado", "Couro"]}, { nome: "O Aventureiro Urbano", acordes: ["Cítrico", "Aquático", "Herbal"]}, { nome: "O Artista Sedutor", acordes: ["Oriental", "Gourmand", "Sedutor"]}, { nome: "O Visionário Moderno", acordes: ["Chipre", "Moderno", "Metálico"]}, { nome: "O Rebelde Sofisticado", acordes: ["Couro", "Incensado", "Sofisticado"]}, { nome: "O Conquistador Natural", acordes: ["Aromático", "Confortável", "Fresco"]}, { nome: "O Espiritual Minimalista", acordes: ["Almiscarado", "Amadeirado", "Minimalista"]}, { nome: "A Alma Clássica", acordes: ["Clássico", "Atalcado", "Herbal"]}, ],
+            Feminino: [ { nome: "A Executiva Visionária", acordes: ["Chipre", "Floral Branco", "Amadeirado"]}, { nome: "A Alma Livre", acordes: ["Cítrico", "Verde", "Aromático"]}, { nome: "A Dama Clássica", acordes: ["Floral Aldeídico", "Atalcado", "Rosas"]}, { nome: "A Artista Enigmática", acordes: ["Oriental", "Especiado", "Incensado"]}, { nome: "A Socialite Radiante", acordes: ["Floral Frutado", "Gourmand", "Baunilha"]}, { nome: "A Minimalista Chic", acordes: ["Almiscarado", "Íris", "Amadeirado Leve"]}, { nome: "A Sábia Serena", acordes: ["Aquático", "Chá", "Sândalo"]}, ],
+            Versatil: [ { nome: "A Liderança Magnética", acordes: ["Amadeirado", "Especiado", "Couro"]}, { nome: "A Alma Exploradora", acordes: ["Cítrico", "Aquático", "Herbal"]}, { nome: "A Arte da Sedução", acordes: ["Oriental", "Gourmand", "Sedutor"]}, { nome: "A Vanguarda Moderna", acordes: ["Chipre", "Moderno", "Metálico"]}, { nome: "A Rebeldia Sofisticada", acordes: ["Couro", "Incensado", "Sofisticado"]}, ]
+        };
+        
+        // --- 2. ESTADO DA APLICAÇÃO ---
+        let perfumesDB = []; // Array para armazenar os perfumes da base de dados.
+        let userData = {
+            nome: "",
+            foto: "https://placehold.co/150x150/121212/D4AF37?text=Perfil",
+            universo: "",
+            origem: "",
+            tagScores: {}
+        };
+        let currentQuestionIndex = 0;
+        let cropper;
+
+        // --- 3. ELEMENTOS DO DOM ---
+        const screens = {
+            inicial: document.getElementById('tela-inicial'),
+            identificacao: document.getElementById('tela-identificacao'),
+            quiz: document.getElementById('tela-quiz'),
+            analise: document.getElementById('tela-analise'),
+            resultados: document.getElementById('tela-resultados'),
+        };
+        
+        const modalCropper = document.getElementById('modal-cropper');
+        const imageToCrop = document.getElementById('image-to-crop');
+        const btnCortar = document.getElementById('btn-cortar');
+        const btnCancelarCorte = document.getElementById('btn-cancelar-corte');
+
+        // --- 4. FUNÇÕES PRINCIPAIS ---
+
+        /**
+         * Normaliza uma string: remove acentos e a converte para minúsculas.
+         * @param {string} str A string a ser normalizada.
+         * @returns {string} A string normalizada.
+         */
+        function normalizeString(str) {
+            if (!str) return '';
+            return str
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+        }
+        
+        /**
+         * Navega entre as telas da aplicação.
+         * @param {string} screenName O nome da tela para exibir.
+         */
+        function navigateTo(screenName) {
+            Object.values(screens).forEach(s => s.classList.add('hidden'));
+            screens[screenName].classList.remove('hidden');
+        }
+
+        /**
+         * Controla a seleção de botões (universo e origem).
+         * @param {string} containerId O ID do elemento que contém os botões.
+         * @param {string} dataKey A chave no objeto userData para salvar a seleção.
+         */
+        function handleSelection(containerId, dataKey) {
+            const container = document.getElementById(containerId);
+            container.addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (button) {
+                    container.querySelectorAll('button').forEach(btn => btn.classList.remove('active', 'btn-primary'));
+                    button.classList.add('active', 'btn-primary');
+                    userData[dataKey] = button.dataset[dataKey.toLowerCase()];
+                }
+            });
+        }
+        
+        /**
+         * Inicia o Cropper.js para cortar a imagem de perfil.
+         * @param {File} imageFile O arquivo de imagem enviado pelo usuário.
+         */
+        function startCropper(imageFile) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imageToCrop.src = e.target.result;
+                modalCropper.classList.remove('hidden');
+                if (cropper) cropper.destroy();
+                cropper = new Cropper(imageToCrop, { aspectRatio: 1, viewMode: 1, background: false });
+            };
+            reader.readAsDataURL(imageFile);
+        }
+        
+        /**
+         * Carrega e exibe a pergunta atual do quiz.
+         */
+        function loadQuestion() {
+            if (currentQuestionIndex < quizData.length) {
+                const q = quizData[currentQuestionIndex];
+                document.getElementById('pergunta-titulo').textContent = q.pergunta;
+                const opcoesContainer = document.getElementById('opcoes-resposta');
+                opcoesContainer.innerHTML = '';
+
+                // Atualiza a barra de progresso
+                const progress = ((currentQuestionIndex + 1) / quizData.length) * 100;
+                document.getElementById('progress-bar').style.width = `${progress}%`;
+
+                // Cria os cards de resposta
+                q.respostas.forEach((r, index) => {
+                    const card = document.createElement('button');
+                    card.dataset.index = index;
+                    
+                    if (r.img) {
+                        card.className = 'quiz-card bg-[#222] rounded-lg overflow-hidden group text-center focus:outline-none focus:ring-2 focus:ring-gold-border';
+                        card.innerHTML = `
+                            <img src="${r.img}" class="w-full h-32 md:h-48 object-cover pointer-events-none" alt="${r.descricao}" onerror="this.onerror=null;this.src='https://placehold.co/400x300/121212/D4AF37?text=Imagem'">
+                            <div class="p-3">
+                                <p class="font-semibold text-white pointer-events-none">${r.descricao}</p>
+                            </div>
+                        `;
+                    } else {
+                         card.className = 'quiz-card bg-[#222] rounded-lg h-full flex items-center justify-center text-xl p-4 focus:outline-none focus:ring-2 focus:ring-gold-border';
+                         card.innerHTML = `<p class="font-semibold text-white pointer-events-none">${r.descricao}</p>`;
+                    }
+                    
+                    card.onclick = selectAnswer;
+                    opcoesContainer.appendChild(card);
+                });
+            } else {
+                // Se o quiz acabou, calcula o resultado.
+                calculateResult();
+            }
+        }
+
+        /**
+         * Processa a resposta selecionada pelo usuário.
+         * @param {Event} e O evento de clique.
+         */
+        function selectAnswer(e) {
+            const answerIndex = e.currentTarget.dataset.index;
+            const question = quizData[currentQuestionIndex];
+            const answer = question.respostas[answerIndex];
+
+            // Feedback sonoro (opcional, mas legal)
+            new Audio('https://cdn.pixabay.com/audio/2021/08/04/audio_c6cc1ee93c.mp3').play().catch(err => console.log("Erro ao tocar áudio:", err));
+
+            // Soma os pontos das tags da resposta
+            for (const tag in answer.tags) {
+                userData.tagScores[tag] = (userData.tagScores[tag] || 0) + answer.tags[tag];
+            }
+            
+            // Soma pontos de tags condicionais (usado na última pergunta)
+            if (answer.tagsCondicionais && answer.tagsCondicionais[userData.universo]) {
+                 const conditionalTags = answer.tagsCondicionais[userData.universo];
+                 for (const tag in conditionalTags) {
+                    userData.tagScores[tag] = (userData.tagScores[tag] || 0) + conditionalTags[tag];
+                }
+            }
+
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+        
+        /**
+         * Calcula o arquétipo do usuário com base nas pontuações.
+         */
+        function calculateResult() {
+            navigateTo('analise');
+            
+            setTimeout(() => {
+                const userScores = userData.tagScores;
+                const possibleArquetipos = arquetipos[userData.universo];
+                
+                let bestMatch = { arquetipo: null, score: -1 };
+
+                // Itera sobre os arquétipos do universo escolhido
+                possibleArquetipos.forEach(arq => {
+                    let currentScore = 0;
+                    // Soma os pontos do usuário para cada acorde do arquétipo
+                    arq.acordes.forEach(acorde => {
+                        const normalizedAcorde = normalizeString(acorde);
+                        // Procura a tag correspondente no score do usuário.
+                        Object.keys(userScores).forEach(userTag => {
+                            if (normalizeString(userTag) === normalizedAcorde) {
+                                currentScore += userScores[userTag];
+                            }
+                        });
+                    });
+                    
+                    // Se o score atual for o maior, define como o melhor match
+                    if(currentScore > bestMatch.score) {
+                        bestMatch = { arquetipo: arq, score: currentScore };
+                    }
+                });
+
+                displayResult(bestMatch.arquetipo);
+
+            }, 2500); // Simula o tempo de análise
+        }
+
+        /**
+         * Carrega a base de dados de perfumes a partir do CSV.
+         */
+        async function loadPerfumes() {
+            try {
+                const response = await fetch(csvUrl);
+                if (!response.ok) throw new Error(`Erro na rede! Status: ${response.status}`);
+                const csvText = await response.text();
+                
+                // Processa o texto do CSV
+                const rows = csvText.trim().replace(/\r/g, "").split('\n').slice(1);
+                
+                perfumesDB = rows.map(row => {
+                    // Regex para separar colunas, lidando com campos entre aspas
+                    const data = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+                    if (data.length < 7) return null; // Ignora linhas malformadas
+
+                    return {
+                        nome: data[0] ? data[0].replace(/"/g, '').trim() : '',
+                        marca: data[1] ? data[1].replace(/"/g, '').trim() : '',
+                        genero: data[2] ? data[2].replace(/"/g, '').trim() : '',
+                        origem: data[3] ? data[3].replace(/"/g, '').trim() : '',
+                        acorde1: data[4] ? data[4].replace(/"/g, '').trim() : '',
+                        acorde2: data[5] ? data[5].replace(/"/g, '').trim() : '',
+                        acorde3: data[6] ? data[6].replace(/"/g, '').trim() : '',
+                    };
+                }).filter(p => p && p.nome); // Remove as linhas nulas e garante que o perfume tem nome
+
+                console.log(`Base de dados carregada com ${perfumesDB.length} perfumes.`);
+
+            } catch (error) {
+                console.error("Erro fatal ao carregar a base de perfumes:", error);
+                alert("Não foi possível carregar a lista de perfumes. Tente recarregar a página.");
+            }
+        }
+
+        /**
+         * [FUNÇÃO CORRIGIDA] Encontra as recomendações de perfume com lógica de fallback.
+         * @param {object} arquetipo O arquétipo vencedor.
+         * @returns {Array} Uma lista de até 5 perfumes recomendados.
+         */
+        function getPerfumeRecommendations(arquetipo) {
+            if (!arquetipo || !arquetipo.acordes) {
+                console.error("Arquétipo inválido para recomendação.");
+                return [];
+            }
+            const acordesVencedoresNorm = arquetipo.acordes.map(normalizeString);
+            
+            console.log("--- INICIANDO RECOMENDAÇÃO ---");
+            console.log("Arquétipo:", arquetipo.nome, "| Acordes:", acordesVencedoresNorm);
+            console.log("Filtros do usuário - Universo:", userData.universo, "| Origem:", userData.origem);
+
+            // 1. Filtra os perfumes por gênero e origem selecionados pelo usuário.
+            let filteredPerfumes = perfumesDB.filter(p => {
+                const generoPerfumeNorm = normalizeString(p.genero);
+                const universoUsuarioNorm = normalizeString(userData.universo);
+                
+                const generoMatch = universoUsuarioNorm === 'versatil' || 
+                                    generoPerfumeNorm === universoUsuarioNorm || 
+                                    generoPerfumeNorm === 'unissex';
+                if (!generoMatch) return false;
+                
+                const origemPerfumeNorm = normalizeString(p.origem);
+                if (userData.origem === 'Nacionais' && origemPerfumeNorm !== 'brasil') return false;
+                if (userData.origem === 'Importados' && origemPerfumeNorm === 'brasil') return false;
+                
+                return true;
+            });
+            console.log(`Encontrados ${filteredPerfumes.length} perfumes após filtro de Gênero/Origem.`);
+
+            // 2. Pontua os perfumes filtrados (MÉTODO PRIMÁRIO)
+            let scoredPerfumes = filteredPerfumes.map(p => {
+                let score = 0;
+                const perfumeAcordesNorm = [normalizeString(p.acorde1), normalizeString(p.acorde2), normalizeString(p.acorde3)];
+                if (perfumeAcordesNorm[0] && acordesVencedoresNorm.some(v => perfumeAcordesNorm[0].includes(v))) score += 5;
+                if (perfumeAcordesNorm[1] && acordesVencedoresNorm.some(v => perfumeAcordesNorm[1].includes(v))) score += 3;
+                if (perfumeAcordesNorm[2] && acordesVencedoresNorm.some(v => perfumeAcordesNorm[2].includes(v))) score += 2;
+                return { ...p, score };
+            });
+
+            // 3. Ordena e filtra os resultados primários
+            let recommendations = scoredPerfumes
+                .filter(p => p.score > 0)
+                .sort((a, b) => b.score - a.score);
+            
+            console.log(`Encontrados ${recommendations.length} perfumes com pontuação > 0 (método primário).`);
+
+            // 4. LÓGICA DE FALLBACK (SEGURANÇA)
+            // Se o método primário não achou nada, ativa um método secundário mais flexível.
+            if (recommendations.length === 0 && filteredPerfumes.length > 0) {
+                console.warn("Nenhuma recomendação primária. Ativando fallback para garantir resultado.");
+                recommendations = filteredPerfumes.map(p => {
+                    let fallbackScore = 0;
+                    const perfumeAcordesNorm = [normalizeString(p.acorde1), normalizeString(p.acorde2), normalizeString(p.acorde3)];
+                     // Dá 1 ponto para qualquer correspondência de acordes
+                    for (const pAcorde of perfumeAcordesNorm) {
+                        if (pAcorde && acordesVencedoresNorm.some(vAcorde => pAcorde.includes(vAcorde))) {
+                            fallbackScore++;
+                        }
+                    }
+                    return { ...p, score: fallbackScore };
+                })
+                .filter(p => p.score > 0)
+                .sort((a, b) => b.score - a.score);
+                 console.log(`Encontradas ${recommendations.length} recomendações via fallback.`);
+            }
+
+            // 5. Retorna as top 5 recomendações
+            return recommendations.slice(0, 5);
+        }
+        
+        /**
+         * Exibe a tela de resultados final.
+         * @param {object} arquetipo O arquétipo vencedor.
+         */
+        function displayResult(arquetipo) {
+            document.getElementById('resultado-foto').src = userData.foto;
+            document.getElementById('resultado-nome').textContent = userData.nome || "Visitante";
+            
+            if (!arquetipo) {
+                document.getElementById('resultado-arquetipo').textContent = "Perfil Indefinido";
+                document.getElementById('lista-perfumes').innerHTML = `<p class="text-center text-gray-400">Não foi possível definir um arquétipo. Tente o quiz novamente!</p>`;
+                navigateTo('resultados');
+                return;
+            }
+
+            document.getElementById('resultado-arquetipo').textContent = arquetipo.nome;
+
+            const recommendations = getPerfumeRecommendations(arquetipo);
+            const listaPerfumesDiv = document.getElementById('lista-perfumes');
+            listaPerfumesDiv.innerHTML = '';
+            
+            if (recommendations.length > 0) {
+                 recommendations.forEach(p => {
+                    const perfumeEl = document.createElement('div');
+                    perfumeEl.className = "bg-[#333] p-3 rounded-lg";
+                    perfumeEl.innerHTML = `<p class="font-bold text-white">${p.nome}</p><p class="text-sm text-gray-400">${p.marca}</p>`;
+                    listaPerfumesDiv.appendChild(perfumeEl);
+                });
+            } else {
+                // Mensagem de fallback final (só deve aparecer se a base de dados falhar ou for vazia)
+                listaPerfumesDiv.innerHTML = `<p class="text-center text-gray-400">Não encontramos recomendações para este perfil no momento. Explore perfumes com acordes como <strong class="gold-text">${arquetipo.acordes.join(', ')}</strong>.</p>`;
+            }
+
+            navigateTo('resultados');
+        }
+
+        // --- 5. EVENT LISTENERS (OUVINTES DE EVENTOS) ---
+        
+        // Botão "Vamos Lá"
+        document.getElementById('btn-comecar').addEventListener('click', () => navigateTo('identificacao'));
+        
+        // Seletores de universo e origem
+        handleSelection('opcoes-universo', 'universo');
+        handleSelection('opcoes-origem', 'origem');
+        
+        // Input de foto
+        document.getElementById('input-foto').addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                startCropper(e.target.files[0]);
+            }
+        });
+
+        // Botões do modal do cropper
+        btnCortar.addEventListener('click', () => {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas({ width: 256, height: 256 });
+                userData.foto = canvas.toDataURL();
+                document.getElementById('preview-foto').src = userData.foto;
+                modalCropper.classList.add('hidden');
+                cropper.destroy();
+            }
+        });
+        
+        btnCancelarCorte.addEventListener('click', () => {
+             modalCropper.classList.add('hidden');
+             if(cropper) cropper.destroy();
+        });
+
+        // Botão "Iniciar Quiz"
+        document.getElementById('btn-iniciar-quiz').addEventListener('click', () => {
+            userData.nome = document.getElementById('input-nome').value;
+            
+            // Validação simples
+            if (!userData.nome || !userData.universo || !userData.origem) {
+                alert('Por favor, preencha seu nome e selecione o universo e a origem.');
+                return;
+            }
+            navigateTo('quiz');
+            loadQuestion();
+        });
+
+        // Botão "Compartilhar Resultado"
+        document.getElementById('btn-compartilhar').addEventListener('click', () => {
+            const resultArea = document.getElementById('area-resultado');
+            html2canvas(resultArea, {
+                backgroundColor: "#222222",
+                useCORS: true // Essencial para carregar imagens de outros domínios
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `meu_perfil_olfativo_${(userData.nome || 'visitante').replace(/ /g, '_')}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            }).catch(err => {
+                console.error("Erro ao gerar imagem:", err);
+                alert("Ocorreu um erro ao tentar gerar a imagem para compartilhamento.");
+            });
+        });
+
+        // Botão "WhatsApp"
+        document.getElementById('btn-whatsapp').addEventListener('click', () => {
+            window.open(linkWhatsapp, '_blank');
+        });
+        
+        // --- 6. INICIALIZAÇÃO ---
+        // Carrega a base de dados de perfumes assim que a página é carregada.
+        window.onload = loadPerfumes;
+
+    </script>
+</body>
+</html>
